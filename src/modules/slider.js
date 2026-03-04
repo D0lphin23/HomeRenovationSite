@@ -1,111 +1,98 @@
 const slider = ({
-    container,
-    wrapper,
-    items,
-    visibleCount = 1,
-    timeInterval = 3000,
-    nextBtn = null,
-    prevBtn = null,
+  container,
+  viewport,
+  wrapper,
+  items,
+  visibleCount = 1,
+  timeInterval = 3000,
+  nextBtn = null,
+  prevBtn = null,
 }) => {
-    console.log(container);
-    console.log(wrapper);
-    console.log(items);
-    console.log(visibleCount);
-    console.log(timeInterval);
-    console.log(nextBtn);
-    console.log(prevBtn);
+  // Если viewport не передан — берём родителя wrapper как fallback
+  const vp = viewport || wrapper.parentElement;
 
-    let isAnimating = false;
+  // Настраиваем базовые стили
+  vp.style.overflow = "hidden";
+  wrapper.style.display = "flex";
+  let isAnimating = false;
+  let interval;
 
-    const itemWidth = 100 / visibleCount;
+  // Вычисляем ширину одного слайда в пикселях по размеру viewport
+  const getItemWidth = () => vp.offsetWidth / visibleCount;
 
+  // Устанавливаем фиксированную ширину каждому слайду и враперу
+  const setItemWidths = () => {
+    const itemWidth = getItemWidth();
     items.forEach((item) => {
-        item.style.flex = `0 0 ${itemWidth}%`;
+      item.style.flex = `0 0 ${itemWidth}px`;
+      item.style.maxWidth = `${itemWidth}px`;
     });
+    wrapper.style.width = `${items.length * itemWidth}px`;
+    wrapper.style.transform = "translateX(0)";
+  };
 
-    const moveNext = () => {
-        if (isAnimating) return;
-        isAnimating = true;
+  setItemWidths();
 
-        wrapper.style.transform = `translateX(-${itemWidth}%)`;
+  // Мгновенно (без анимации) устанавливает transform, затем восстанавливает transition
+  const snapTo = (px) => {
+    wrapper.style.transition = "none";
+    wrapper.style.transform = `translateX(${px}px)`;
+    void wrapper.offsetWidth; // принудительный reflow
+    wrapper.style.transition = "transform 0.5s ease";
+  };
 
-        wrapper.addEventListener("transitionend", function handler() {
-            wrapper.appendChild(wrapper.firstElementChild);
-            wrapper.style.transition = "none";
-            wrapper.style.transform = "translateX(0)";
+  // Прокрутка вперёд: анимируем сдвиг, затем DOM-ротация без анимации
+  const moveNext = () => {
+    if (isAnimating) return;
+    isAnimating = true;
 
-            void wrapper.offsetWidth; // перерисовка
+    const itemWidth = getItemWidth();
+    wrapper.style.transition = "transform 0.5s ease";
+    wrapper.style.transform = `translateX(-${itemWidth}px)`;
 
-            wrapper.style.transition = "transform 0.5s ease";
-            wrapper.removeEventListener("transitionend", handler);
-            isAnimating = false;
-        });
-    };
+    wrapper.addEventListener("transitionend", function handler() {
+      wrapper.removeEventListener("transitionend", handler);
+      wrapper.appendChild(wrapper.firstElementChild); // ротация DOM
+      snapTo(0);
+      isAnimating = false;
+    });
+  };
 
-    const movePrev = () => {
-        if (isAnimating) return;
-        isAnimating = true;
+  // Прокрутка назад: DOM-ротация без анимации, затем анимированный возврат к 0
+  const movePrev = () => {
+    if (isAnimating) return;
+    isAnimating = true;
 
-        wrapper.style.transition = "none";
-        wrapper.insertBefore(
-            wrapper.lastElementChild,
-            wrapper.firstElementChild,
-        );
-        wrapper.style.transform = `translateX(-${itemWidth}%)`;
+    const itemWidth = getItemWidth();
+    wrapper.insertBefore(wrapper.lastElementChild, wrapper.firstElementChild); // ротация DOM
+    snapTo(-itemWidth); // мгновенно ставим за левый край
+    wrapper.style.transform = "translateX(0)"; // анимируем появление справа налево
 
-        void wrapper.offsetWidth;
+    wrapper.addEventListener("transitionend", function handler() {
+      wrapper.removeEventListener("transitionend", handler);
+      isAnimating = false;
+    });
+  };
 
-        wrapper.style.transition = "transform 0.5s ease";
-        wrapper.style.transform = "translateX(0)";
+  if (nextBtn) nextBtn.addEventListener("click", moveNext);
+  if (prevBtn) prevBtn.addEventListener("click", movePrev);
 
-        wrapper.addEventListener("transitionend", function handler() {
-            wrapper.removeEventListener("transitionend", handler);
-            isAnimating = false;
-        });
-    };
+  const startAutoSlide = () => {
+    interval = setInterval(moveNext, timeInterval);
+  };
 
-    nextBtn.addEventListener("click", moveNext);
-    prevBtn.addEventListener("click", movePrev);
+  const stopAutoSlide = () => {
+    clearInterval(interval);
+  };
 
-    // let currentIndex = 0;
-    // let interval;
+  if (container) {
+    container.addEventListener("mouseenter", stopAutoSlide);
+    container.addEventListener("mouseleave", startAutoSlide);
+  }
 
-    // items.forEach((item) => {
-    //     item.style.flex = `0 0 ${100 / items.length}%`;
-    // });
+  startAutoSlide();
 
-    // const moveSlider = () => {
-    //     const offset = currentIndex * (100 / (items.length / visibleCount));
-    //     wrapper.style.transform = `translateX(-${offset}%)`;
-    // };
-
-    // nextBtn.addEventListener("click", () => {
-    //     if (currentIndex < items.length - visibleCount) {
-    //         currentIndex++;
-    //     } else {
-    //         currentIndex = 0;
-    //     }
-
-    //     moveSlider();
-    // });
-
-    // prevBtn.addEventListener("click", () => {
-    //     if (currentIndex > 0) {
-    //         currentIndex--;
-    //     } else {
-    //         currentIndex = items.length - visibleCount;
-    //     }
-
-    //     moveSlider();
-    // });
-
-    // const startAutoSlide = () => {
-    //     interval = setInterval(() => {
-    //         nextBtn.click();
-    //     }, timeInterval);
-    // };
-
-    // startAutoSlide();
+  window.addEventListener("resize", setItemWidths);
 };
 
 export default slider;
