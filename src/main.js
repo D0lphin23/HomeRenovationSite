@@ -1,5 +1,5 @@
 import callBackModal from "./modules/callBackModal";
-import callMasterModa from "./modules/callMasterModa";
+import callMasterModal from "./modules/callMasterModal";
 import benefits from "./modules/benefits";
 import services from "./modules/services";
 import timer from "./modules/timer";
@@ -9,7 +9,7 @@ import validateInputs from "./modules/validateInputs";
 callBackModal();
 benefits();
 services();
-callMasterModa();
+callMasterModal();
 timer("09 March 2026");
 discountModal();
 validateInputs();
