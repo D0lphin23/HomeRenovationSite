@@ -1,5 +1,6 @@
 html {
     height: 100%;
+    scroll-behavior: smooth;
 }
 body {
     font-family: "NeoSansCyr-Regular", sans-serif;
@@ -1693,4 +1694,33 @@ input.error {
     .services-inner {
         max-width: 100%;
     }
+}
+
+#certificate-modal {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#certificate-modal.cert-modal-active {
+    display: block;
+}
+
+.cert-modal-content {
+    position: relative;
+    z-index: 1;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cert-modal-img {
+    max-width: 90vw;
+    max-height: 90vh;
+    display: block;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
 }
